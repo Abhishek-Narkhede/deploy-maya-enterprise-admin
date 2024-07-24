@@ -11,7 +11,7 @@ const SubscriberList = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
-  const [seacrhQuery,setSearchQuery] = useState('')
+  const [seacrhQuery, setSearchQuery] = useState('')
 
   const handleSearch = (e) => {
     setSearchQuery(e.target.value)
@@ -29,18 +29,22 @@ const SubscriberList = () => {
     try {
       setLoading(true);
       const payload = {
-        "page" : currentPage,
-        "limit" :10,
-        "searchQuery":seacrhQuery
-    }
-      const endpoint = isSubscribed ? 'v1/email-subscribe/get-all' : 'v1/email-subscribe/get-all/unsubscriber';
+        "page": currentPage,
+        "limit": 10,
+        "searchQuery": seacrhQuery
+      }
+      const endpoint = isSubscribed
+        ? 'v1/email-subscribe/get-all'
+        : 'v1/email-subscribe/get-all/unsubscriber';
+
       const response = await apiPOST(endpoint, payload);
-      console.log("Subscribers res", response?.data?.data?.data);
-      setSubscriber(response?.data?.data?.data);
-      // setTotalPages(response?.data?.data?.pagination?.totalPages);
+      const subscriberData = response?.data?.data?.data;
+      setSubscriber(subscriberData);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching subscribers:', error);
+      setLoading(false);
+    } finally {
       setLoading(false);
     }
   };
@@ -48,11 +52,24 @@ const SubscriberList = () => {
   const handlePageChange = (e, { activePage }) => {
     setCurrentPage(activePage);
   };
+  const debounce = (func, delay) => {
+    let debounceTimer;
+    return function (...args) {
+      const context = this;
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => func.apply(context, args), delay);
+    };
+  };
 
+  // useEffect(() => {
+  //   const debouncedFetchSubscriber = debounce(() => fetchSubscriber(!subscribed), 300);
+  //   debouncedFetchSubscriber();
+  // }, [currentPage, subscribed, seacrhQuery]);
   useEffect(() => {
-    fetchSubscriber(!subscribed);
-  }, [currentPage, subscribed,seacrhQuery]);
-
+    fetchSubscriber(!subscribed)
+    // const debouncedFetchSubscriber = debounce(() => fetchSubscriber(!subscribed), 300);
+    // debouncedFetchSubscriber();
+  }, [currentPage, subscribed, seacrhQuery]);
   return (
     <div>
       <SubscriberTable
@@ -67,6 +84,7 @@ const SubscriberList = () => {
         handleToggle={handleToggle}
         seacrhQuery={seacrhQuery}
         handleSearch={handleSearch}
+        setSubscriber={setSubscriber}
       />
       <AddSubscriberModal
         open={open}
